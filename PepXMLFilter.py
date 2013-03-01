@@ -22,7 +22,8 @@ NS = { 'n': 'http://regis-web.systemsbiology.net/pepXML' }
 
 class PepHit(object):
 	''' A class to hold hits from PepXML '''
-	def __init__(self, scan, mass, charge, rt, peptide, protein, desc, iprob):
+	def __init__(self, spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob):
+		self.spectrum = spectrum
 		self.scan = scan
 		self.mass = mass
 		self.charge = charge
@@ -76,6 +77,7 @@ def HitParse(subtree, ip):
 		expr = 'n:search_result/n:search_hit/n:analysis_result[@analysis="interprophet"]/n:interprophet_result'
 		iprob = float(sq.xpath(expr, namespaces = NS)[0].get('probability'))
 		if iprob > ip: # Parse this spectrum query and add it to the output
+			spectrum = sq.get('spectrum').split('.')[0]
 			scan = int(sq.get('start_scan'))
 			mass = float(sq.get('precursor_neutral_mass'))
 			charge = int(sq.get('assumed_charge'))
@@ -87,7 +89,7 @@ def HitParse(subtree, ip):
 				desc = bh.get('protein_descr')
 			except:
 				desc = ''
-			hit = PepHit(scan, mass, charge, rt, peptide, protein, desc, iprob)
+			hit = PepHit(spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob)
 			try:
 				altprots = bh.xpath('n:alternative_protein', namespaces = NS)
 				for prot in altprots:
