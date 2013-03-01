@@ -30,6 +30,8 @@ class ProtHit(object):
 		self.total_peps = total_peps
 		self.coverage = coverage
 		self.perc_spec_ids = perc_spec_ids
+	def __repr__(self):
+		return '%s - %s' % (self.name, self.desc)
 
 @Timer
 def ReadXML(xmlfile):

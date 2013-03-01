@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		fdr = args.fdr
 	
 	outfn = pepxml[:-3]+'csv'
-	rh = RunHits(pepxml, fdr)
+	rh = RunHits(PepHit, pepxml, fdr)
 	with open(outfn, 'wb') as f:
 		# Manual sorting, more prone to breaking than pulling the fieldnames from the data
 		fieldnames = ['rt', 'scan', 'mass', 'charge', 'peptide', 'iprob', 'protein', 'desc', 'alt_prots', 'spectrum']

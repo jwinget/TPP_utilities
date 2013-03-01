@@ -35,6 +35,8 @@ class PepHit(object):
 		self.alt_prots = {}
 	def add_alt_prot(self, altprot, desc):
 		self.alt_prots[altprot] = desc
+	def __repr__(self):
+		return '%s, %s' % (self.peptide, self.mass)
 
 @Timer
 def ReadXML(xmlfile):
