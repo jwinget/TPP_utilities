@@ -78,7 +78,7 @@ def HitParse(tree, pc):
 				desc = ''
 			hit = ProtHit(name, desc, probability, unique_peps, total_peps, coverage, perc_spec_ids)
 			hits.append(hit)
-	print('Found '+str(len(hits))+' significant hits from '+str(len(proteins))+' spectrum queries')
+	print('Found '+str(len(hits))+' significant hits from '+str(len(proteins))+' total proteins')
 	return hits
 	
 def RunHits(pepxml, fdr):

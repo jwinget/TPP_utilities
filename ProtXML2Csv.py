@@ -13,13 +13,11 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('protXML',
 						help = 'A protXML file')
-	parser.add_argument('-f', '--fdr', type=float,
+	parser.add_argument('-f', '--fdr', type=float, default=0.01,
 						help = 'An FDR cutoff value, e.g. 0.01.  Default is 0.01')
 	args = parser.parse_args()
 	protxml = args.protXML
-	fdr = 0.01
-	if args.fdr: # If unset, the default will be used
-		fdr = args.fdr
+	fdr = args.fdr
 	
 	outfn = protxml[:-3]+'csv'
 	rh = RunHits(protxml, fdr)
