@@ -3,7 +3,7 @@
 # Filters PepXML based on FDR
 # Maps resulting hits to class
 # Author: Jason Winget
-# Version: 0.1
+# Version: 0.2
 #
 # For speed, most XML parsing uses XPath expressions.
 # These are likely to fail if the XML structure changes.
@@ -67,7 +67,7 @@ def SepAnalyses(tree):
 	return rundict
 
 @Timer
-def HitParse(subtree, ip):
+def HitParse(pepclass, subtree, ip):
 	''' Find hits above the iprobability cutoff
 	Parse to PepHit class '''
 	# Get all spectrum queries
@@ -89,7 +89,7 @@ def HitParse(subtree, ip):
 				desc = bh.get('protein_descr')
 			except:
 				desc = ''
-			hit = PepHit(spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob)
+			hit = pepclass(spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob)
 			try:
 				altprots = bh.xpath('n:alternative_protein', namespaces = NS)
 				for prot in altprots:
@@ -105,7 +105,7 @@ def HitParse(subtree, ip):
 	print('Found '+str(len(hits))+' significant hits from '+str(len(sqs))+' spectrum queries')
 	return hits
 	
-def RunHits(pepxml, fdr):
+def RunHits(pepclass, pepxml, fdr):
 	''' A function to return a dict of hits '''
 	tree = ReadXML(pepxml)
 	ip = ProbCutoff(tree, fdr)
@@ -113,9 +113,9 @@ def RunHits(pepxml, fdr):
 	outdict = {}
 	for run, sqs in msms_runs.iteritems():
 		print('Parsing search hits from '+run)
-		hits = HitParse(sqs, ip)
+		hits = HitParse(pepclass, sqs, ip)
 		outdict[run] = hits
 	return outdict
 
 if __name__ == '__main__':
-	RunHits(PEPXML, FDR)
+	RunHits(PepHit, PEPXML, FDR)
