@@ -10,7 +10,9 @@ import csv
 from PepXMLFilter import *
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(
+		description='Filter PepXML for a given FDR and write results to a csv file'
+	)
 	parser.add_argument('pepXML',
 						help = 'An iprophet pepXML file')
 	parser.add_argument('-f', '--fdr', type=float,

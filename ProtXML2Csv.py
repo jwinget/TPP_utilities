@@ -10,7 +10,9 @@ import csv
 from ProtXMLFilter import *
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(
+		description='Filter ProtXML for a given FDR and write results to a csv file'
+	)
 	parser.add_argument('protXML',
 						help = 'A protXML file')
 	parser.add_argument('-f', '--fdr', type=float, default=0.01,

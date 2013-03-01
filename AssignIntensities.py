@@ -89,14 +89,16 @@ def Matcher(iter1, iter2):
 	print('-'*10)
 	return matches
 	
-def GetIntensities(PepHit, kros):
+def GetIntensities(peps, kros):
 	''' Find the appropriate intensities for a peptide hit from available kronik entries '''
 
 	return intensities
 
 if __name__ == '__main__':
 	# Handle arguments
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(
+		description='Map Kronik feature intensities to peptide search hits'
+		)
 	parser.add_argument('pepXML',
 						help = 'An iprophet pepXML file')
 	parser.add_argument('-f', '--fdr', type = float, default = 0.01,
@@ -117,3 +119,7 @@ if __name__ == '__main__':
 		print('Parsed '+str(len(kp))+' lines from '+kf)
 	rh = RunHits(QPep, pepxml, fdr)
 	fm = Matcher(rh.keys(), kdict.keys())
+	for m in fm: # Let's get down to brass tacks
+		peps = rh[m[0]]
+		kros = kdict[m[1]]
+		GetIntensities(peps, kros)
