@@ -22,14 +22,21 @@ NS = { 'n': 'http://regis-web.systemsbiology.net/pepXML' }
 
 class PepHit(object):
 	''' A class to hold hits from PepXML '''
+<<<<<<< HEAD
 	def __init__(self, spectrum, scan, mass, charge, rt, peptide, modpep, protein, desc, iprob):
+=======
+	def __init__(self, spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob):
+>>>>>>> upstream/master
 		self.spectrum = spectrum
 		self.scan = scan
 		self.mass = mass
 		self.charge = charge
 		self.rt = rt
 		self.peptide = peptide
+<<<<<<< HEAD
 		self.modpep = modpep
+=======
+>>>>>>> upstream/master
 		self.protein = protein
 		self.desc = desc
 		self.iprob = iprob
@@ -49,7 +56,11 @@ def ReadXML(xmlfile):
 def ProbCutoff(tree, fdr):
 	''' Convert FDR to iprobability cutoff '''
 	root = tree.getroot()
+<<<<<<< HEAD
 	nodes = root.xpath('n:analysis_summary/n:interprophet_summary/n:roc_error_data/n:roc_data_point',
+=======
+	nodes = root.xpath('n:analysis_summary/n:roc_data_point',
+>>>>>>> upstream/master
 						namespaces = NS)
 	prob = []
 	error = []
@@ -89,6 +100,7 @@ def HitParse(pepclass, subtree, ip):
 			peptide = bh.get('peptide')
 			protein = bh.get('protein')
 			try:
+<<<<<<< HEAD
 				mh = bh.xpath('n:modification_info', namespaces = NS)[0]
 				modpep = mh.get('modified_peptide')
 			except:
@@ -98,6 +110,12 @@ def HitParse(pepclass, subtree, ip):
 			except:
 				desc = ''
 			hit = pepclass(spectrum, scan, mass, charge, rt, peptide, modpep, protein, desc, iprob)
+=======
+				desc = bh.get('protein_descr')
+			except:
+				desc = ''
+			hit = pepclass(spectrum, scan, mass, charge, rt, peptide, protein, desc, iprob)
+>>>>>>> upstream/master
 			try:
 				altprots = bh.xpath('n:alternative_protein', namespaces = NS)
 				for prot in altprots:
