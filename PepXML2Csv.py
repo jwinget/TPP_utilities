@@ -27,11 +27,7 @@ if __name__ == '__main__':
 	rh = RunHits(PepHit, pepxml, fdr)
 	with open(outfn, 'wb') as f:
 		# Manual sorting, more prone to breaking than pulling the fieldnames from the data
-<<<<<<< HEAD
 		fieldnames = ['rt', 'scan', 'mass', 'charge', 'prec_intensity', 'peptide', 'modpep', 'iprob', 'protein', 'desc', 'alt_prots', 'spectrum']
-=======
-		fieldnames = ['rt', 'scan', 'mass', 'charge', 'peptide', 'iprob', 'protein', 'desc', 'alt_prots', 'spectrum']
->>>>>>> upstream/master
 		# fieldnames = vars(rh[rh.keys()[0]][0]) # Grab attributes from first class instance
 		writer = csv.DictWriter(f, delimiter=',', fieldnames=fieldnames)
 		writer.writerow(dict((fn, fn) for fn in fieldnames)) # Write headers
