@@ -12,7 +12,7 @@ from PepXMLFilter import *
 def GetFieldnames(hits):
 	''' Find all field names '''
 	print('Parsing field names')
-	fn = []
+	fn = ['run']
 	for run, hitlist in hits.iteritems():
 		for hit in hitlist:
 			for k in hit.keys():
@@ -46,5 +46,6 @@ if __name__ == '__main__':
 		writer.writerow(dict((f, f) for f in fn)) # Write headers
 		for run, hitlist in hits.iteritems():
 			for hit in hitlist:
+				hit['run'] = run
 				writer.writerow(hit)
 	print('Output written to '+outfn)

@@ -92,18 +92,18 @@ def HitParse(pepxml, ip, at):
 				mc = int(bh.get('num_missed_cleavages'))
 				kw['missed_cleavages'] = mc
 				try: # Get modified peptide if present
-					mh = bh.xpath('n:modification_info', namespaces = NS[0])
+					mh = bh.xpath('n:modification_info', namespaces = NS)[0]
 					modpep = mh.get('modified_peptide')
 					kw['modpep'] = modpep
 				except:
 					pass
 				try: # Get compensation voltage if present (LOLFAIMS)
-					cv = int(sq.get('compensation_voltage'))
+					cv = float(sq.get('compensation_voltage'))
 					kw['compensation_voltage'] = cv
 				except:
 					pass
 				try: # Get precursor intensity if present
-					pi = int(sq.get('precursor_intensity'))
+					pi = float(sq.get('precursor_intensity'))
 					kw['prec_intensity'] = pi
 				except:
 					pass
