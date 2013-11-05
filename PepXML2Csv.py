@@ -9,6 +9,17 @@ import argparse
 import csv
 from PepXMLFilter import *
 
+def GetFieldnames(hits):
+	''' Find all field names '''
+	print('Parsing field names')
+	fn = []
+	for run, hitlist in hits.iteritems():
+		for hit in hitlist:
+			for k in hit.keys():
+				if k not in fn:
+					fn.append(k)
+	return fn
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 		description='Filter PepXML for a given FDR and write results to a csv file'
@@ -24,15 +35,16 @@ if __name__ == '__main__':
 		fdr = args.fdr
 	
 	outfn = pepxml[:-3]+'csv'
-	rh = RunHits(PepHit, pepxml, fdr)
+
+	ip = ProbCutoff(pepxml, fdr)
+	at = GetAnalysisType(pepxml)
+	hits = HitParse(pepxml, ip, at)
+	fn = GetFieldnames(hits)
+
 	with open(outfn, 'wb') as f:
-		# Manual sorting, more prone to breaking than pulling the fieldnames from the data
-		fieldnames = ['rt', 'scan', 'mass', 'charge', 'prec_intensity', 'peptide', 'modpep', 'iprob', 'protein', 'desc', 'alt_prots', 'spectrum']
-		# fieldnames = vars(rh[rh.keys()[0]][0]) # Grab attributes from first class instance
-		writer = csv.DictWriter(f, delimiter=',', fieldnames=fieldnames)
-		writer.writerow(dict((fn, fn) for fn in fieldnames)) # Write headers
-		for run, hits in rh.iteritems():
-			for hit in hits:
-				writer.writerow(vars(hit))
-	
+		writer = csv.DictWriter(f, delimiter=',', fieldnames=fn)
+		writer.writerow(dict((f, f) for f in fn)) # Write headers
+		for run, hitlist in hits.iteritems():
+			for hit in hitlist:
+				writer.writerow(hit)
 	print('Output written to '+outfn)

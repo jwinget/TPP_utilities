@@ -1,12 +1,9 @@
 #-- PepXMLFilter
 #
 # Filters PepXML based on FDR
-# Maps resulting hits to class
 # Author: Jason Winget
-# Version: 0.2
+# Version: 1.1
 #
-# For speed, most XML parsing uses XPath expressions.
-# These are likely to fail if the XML structure changes.
 #--
 
 from numpy import interp
@@ -14,116 +11,117 @@ from lxml import etree
 from utils import Timer
 
 # Just for testing
-PEPXML = '1a_comet.interact.iproph.pep.xml'
+PEPXML = '../2013-08-29_LatinSquare/LSC1.interact.iproph.pep.xml'
 FDR = 0.01
 
 # PepXML namespace, required by parser
 NS = { 'n': 'http://regis-web.systemsbiology.net/pepXML' }
 
-class PepHit(object):
-	''' A class to hold hits from PepXML '''
-	def __init__(self, spectrum, scan, mass, charge, rt, peptide, modpep, protein, desc, iprob):
-		self.spectrum = spectrum
-		self.scan = scan
-		self.mass = mass
-		self.charge = charge
-		self.rt = rt
-		self.peptide = peptide
-		self.modpep = modpep
-		self.protein = protein
-		self.desc = desc
-		self.iprob = iprob
-		self.alt_prots = {}
-	def add_alt_prot(self, altprot, desc):
-		self.alt_prots[altprot] = desc
-	def __repr__(self):
-		return '%s, %s' % (self.peptide, self.mass)
+def IterParse(xmlfile, xmltag, fn, *args):
+	''' Iteratively parse an XML file based on a given tag '''
+	context = etree.iterparse(xmlfile, tag='{'+NS['n']+'}'+xmltag)
+	for event, elem in context:
+		result = fn(elem, *args)
+		elem.clear()
+	return result
 
 @Timer
-def ReadXML(xmlfile):
-	''' Read an XML file into memory '''
-	with open(xmlfile, 'rb') as f:
-		tree = etree.parse(xmlfile)
-	return tree
-
-def ProbCutoff(tree, fdr):
+def ProbCutoff(pepxml, fdr):
 	''' Convert FDR to iprobability cutoff '''
-	root = tree.getroot()
-	nodes = root.xpath('n:analysis_summary/n:interprophet_summary/n:roc_error_data/n:roc_data_point',
-						namespaces = NS)
-	prob = []
 	error = []
-	for node in nodes:
-		prob.append(float(node.get('min_prob')))
-		error.append(float(node.get('error')))
-	ip = interp(fdr, error, prob) # This is the whole reason for requiring numpy
-	print('iProbability of '+str(ip)+' gives FDR of '+str(fdr))
+	prob = []
+	def genProbList(elem):
+		''' Function to populate list of error points based on models '''
+		if elem.get('charge') == 'all':
+			roc_points = elem.xpath('n:roc_data_point', namespaces=NS)
+			for rdp in roc_points:
+				error.append(float(rdp.get('error')))
+				prob.append(float(rdp.get('min_prob')))
+		return error, prob
+	IterParse(pepxml, 'roc_error_data', genProbList)
+	ip = interp(fdr, error, prob)
+	print('Probability of '+str(ip)+' give FDR of '+str(fdr))
 	return ip
 
-def SepAnalyses(tree):
-	''' Split PepXML into individual msms runs '''
-	runs = tree.xpath('n:msms_run_summary', namespaces = NS)
-	rundict = {}
-	for run in runs:
-		basename = run.get('base_name').split('/')[-1]
-		rundict[basename] = run
-	return rundict
+def GetAnalysisType(pepxml):
+	''' Find if the data was processed with iProphet '''
+	ats = []
+	def getAnalysis(elem):
+		ats.append(elem.get('analysis'))
+		return ats
+	IterParse(pepxml, 'analysis_summary', getAnalysis)
+	return ats[0]
 
 @Timer
-def HitParse(pepclass, subtree, ip):
+def HitParse(pepxml, ip, at):
 	''' Find hits above the iprobability cutoff
 	Parse to PepHit class '''
-	# Get all spectrum queries
-	sqs = subtree.xpath('n:spectrum_query', namespaces = NS)
-	hits = []
-	for sq in sqs:
-		expr = 'n:search_result/n:search_hit/n:analysis_result[@analysis="interprophet"]/n:interprophet_result'
-		iprob = float(sq.xpath(expr, namespaces = NS)[0].get('probability'))
-		if iprob > ip: # Parse this spectrum query and add it to the output
-			spectrum = sq.get('spectrum').split('.')[0]
-			scan = int(sq.get('start_scan'))
-			mass = float(sq.get('precursor_neutral_mass'))
-			charge = int(sq.get('assumed_charge'))
-			rt = float(sq.get('retention_time_sec')) / 60.0 # Convert to minutes
-			bh = sq.xpath('n:search_result/n:search_hit', namespaces = NS)[0]
-			peptide = bh.get('peptide')
-			protein = bh.get('protein')
-			try:
-				mh = bh.xpath('n:modification_info', namespaces = NS)[0]
-				modpep = mh.get('modified_peptide')
-			except:
-				modpep = ''
-			try:
+	hits = {}
+	print('Parsing significant peptides')
+	def hitParser(*args):
+		''' Function to populate dictionary of hits '''
+		elem = args[0]
+		basename = elem.get('base_name').split('/')[-1]
+		if basename not in hits.keys():
+			hits[basename] = []
+		spectrum_queries = elem.xpath('n:spectrum_query', namespaces = NS)
+		for sq in spectrum_queries:
+			kw = {}
+			expr = 'n:search_result/n:search_hit/n:analysis_result[@analysis="'+at+'"]/n:'+at+'_result'
+			prob = float(sq.xpath(expr, namespaces = NS)[0].get('probability'))
+			if prob > ip:
+				bn = sq.get('spectrum').split('.')[0]
+				kw['probability'] = prob
+				scan = int(sq.get('start_scan'))
+				kw['scan'] = scan
+				mass = float(sq.get('precursor_neutral_mass'))
+				kw['mass'] = mass
+				charge = int(sq.get('assumed_charge'))
+				kw['charge'] = charge
+				rt = float(sq.get('retention_time_sec')) / 60.0 # Convert to minutes
+				kw['rt'] = rt
+				bh = sq.xpath('n:search_result/n:search_hit', namespaces = NS)[0]
+				peptide = bh.get('peptide')
+				kw['peptide'] = peptide
+				protein = bh.get('protein')
+				kw['protein'] = protein
 				desc = bh.get('protein_descr')
-			except:
-				desc = ''
-			hit = pepclass(spectrum, scan, mass, charge, rt, peptide, modpep, protein, desc, iprob)
-			try:
-				altprots = bh.xpath('n:alternative_protein', namespaces = NS)
-				for prot in altprots:
-					altprot = prot.get('protein')
-					try:
-						altdesc = prot.get('protein_descr')
-					except:
-						altdesc = ''
-					hit.add_alt_prot(altprot, altdesc)
-			except:
-				pass
-			hits.append(hit)
-	print('Found '+str(len(hits))+' significant hits from '+str(len(sqs))+' spectrum queries')
+				kw['desc'] = desc
+				ntt = int(bh.get('num_tol_term'))
+				kw['ntt'] = ntt
+				mc = int(bh.get('num_missed_cleavages'))
+				kw['missed_cleavages'] = mc
+				try: # Get modified peptide if present
+					mh = bh.xpath('n:modification_info', namespaces = NS[0])
+					modpep = mh.get('modified_peptide')
+					kw['modpep'] = modpep
+				except:
+					pass
+				try: # Get compensation voltage if present (LOLFAIMS)
+					cv = int(sq.get('compensation_voltage'))
+					kw['compensation_voltage'] = cv
+				except:
+					pass
+				try: # Get precursor intensity if present
+					pi = int(sq.get('precursor_intensity'))
+					kw['prec_intensity'] = pi
+				except:
+					pass
+				if bn not in hits.keys():
+					print('Error, base name mismatch')
+				else:
+					hits[bn].append(kw)
+		return hits
+	IterParse(pepxml, 'msms_run_summary', hitParser)
 	return hits
 	
-def RunHits(pepclass, pepxml, fdr):
-	''' A function to return a dict of hits '''
-	tree = ReadXML(pepxml)
-	ip = ProbCutoff(tree, fdr)
-	msms_runs = SepAnalyses(tree)
-	outdict = {}
-	for run, sqs in msms_runs.iteritems():
-		print('Parsing search hits from '+run)
-		hits = HitParse(pepclass, sqs, ip)
-		outdict[run] = hits
-	return outdict
-
 if __name__ == '__main__':
-	RunHits(PepHit, PEPXML, FDR)
+	ip = ProbCutoff(PEPXML, FDR)
+	at = GetAnalysisType(PEPXML)
+	print(at)
+	#hits = HitParse(PEPXML, ip, at)
+	#i = 0
+	#for k, v in hits.iteritems():
+	#	for p in v:
+	#		i += 1
+	#print('Found '+str(i)+' (non-unique) peptides above cutoff')
