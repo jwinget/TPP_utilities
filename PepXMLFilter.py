@@ -9,6 +9,7 @@
 from numpy import interp
 from lxml import etree
 from utils import Timer
+import sys
 
 # Just for testing
 PEPXML = '../2013-08-29_LatinSquare/LSC1.interact.iproph.pep.xml'
@@ -40,7 +41,7 @@ def ProbCutoff(pepxml, fdr):
 		return error, prob
 	IterParse(pepxml, 'roc_error_data', genProbList)
 	ip = interp(fdr, error, prob)
-	print('Probability of '+str(ip)+' give FDR of '+str(fdr))
+	sys.stdout.write('Probability of '+str(ip)+' gives FDR of '+str(fdr))
 	return ip
 
 def GetAnalysisType(pepxml):
@@ -57,7 +58,7 @@ def HitParse(pepxml, ip, at):
 	''' Find hits above the iprobability cutoff
 	Parse to PepHit class '''
 	hits = {}
-	print('Parsing significant peptides')
+	sys.stdout.write('Parsing significant peptides')
 	def hitParser(*args):
 		''' Function to populate dictionary of hits '''
 		elem = args[0]
@@ -78,8 +79,11 @@ def HitParse(pepxml, ip, at):
 				kw['mass'] = mass
 				charge = int(sq.get('assumed_charge'))
 				kw['charge'] = charge
-				rt = float(sq.get('retention_time_sec')) / 60.0 # Convert to minutes
-				kw['rt'] = rt
+				try:
+					rt = float(sq.get('retention_time_sec')) / 60.0 # Convert to minutes
+					kw['rt'] = rt
+				except:
+					pass
 				bh = sq.xpath('n:search_result/n:search_hit', namespaces = NS)[0]
 				peptide = bh.get('peptide')
 				kw['peptide'] = peptide
@@ -108,7 +112,7 @@ def HitParse(pepxml, ip, at):
 				except:
 					pass
 				if bn not in hits.keys():
-					print('Error, base name mismatch')
+					sys.stdout.write('Error, base name mismatch')
 				else:
 					hits[bn].append(kw)
 		return hits
@@ -118,10 +122,6 @@ def HitParse(pepxml, ip, at):
 if __name__ == '__main__':
 	ip = ProbCutoff(PEPXML, FDR)
 	at = GetAnalysisType(PEPXML)
-	print(at)
+	sys.stdout.write(at)
 	#hits = HitParse(PEPXML, ip, at)
 	#i = 0
-	#for k, v in hits.iteritems():
-	#	for p in v:
-	#		i += 1
-	#print('Found '+str(i)+' (non-unique) peptides above cutoff')

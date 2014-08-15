@@ -68,7 +68,10 @@ def HitParse(tree, pc):
 		if prob > pc: # Parse this protein and add it to the output
 			name = p.get('protein_name')
 			probability = float(p.get('probability'))
-			coverage = float(p.get('percent_coverage'))
+			try:
+				coverage = float(p.get('percent_coverage'))
+			except:
+				coverage = 0.0
 			up = p.get('unique_stripped_peptides')
 			ups = up.split('+')
 			unique_peps = len([u for u in ups if not u == '+'])

@@ -7,11 +7,12 @@
 
 import argparse
 import csv
+import sys
 from PepXMLFilter import *
 
 def GetFieldnames(hits):
 	''' Find all field names '''
-	print('Parsing field names')
+	sys.stdout.write('Parsing field names')
 	fn = ['run']
 	for run, hitlist in hits.iteritems():
 		for hit in hitlist:
@@ -48,4 +49,4 @@ if __name__ == '__main__':
 			for hit in hitlist:
 				hit['run'] = run
 				writer.writerow(hit)
-	print('Output written to '+outfn)
+	sys.stdout.write('Output written to '+outfn)

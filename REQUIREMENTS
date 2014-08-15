@@ -1,5 +1,0 @@
-# Apps built with Python2.7
-# First set up a virtualenv, then
-# install with pip install -r REQUIREMENTS
-lxml>=3.1.0
-numpy>=1.7.0
